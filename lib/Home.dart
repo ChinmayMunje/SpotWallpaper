@@ -2,11 +2,14 @@ import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart'as http;
 import 'package:spot_wallpaper_app/Category_screen.dart';
 import 'package:spot_wallpaper_app/Model/Photo_Model.dart';
 import 'package:spot_wallpaper_app/Search_View.dart';
 import 'package:spot_wallpaper_app/Services/WallpaperServices.dart';
+import 'package:spot_wallpaper_app/bloc/wallpaper_bloc.dart';
+import 'package:spot_wallpaper_app/bloc/wallpaper_event.dart';
 import 'package:spot_wallpaper_app/data/category_data.dart';
 
 class Home extends StatefulWidget {
@@ -15,6 +18,7 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  WallpaperBloc wallpaperBloc;
   WallpaperServices services;
   var wallpaperDetail;
 
@@ -28,6 +32,9 @@ class _HomeState extends State<Home> {
     getTrendingWallpaper();
     category = getCategory();
     super.initState();
+    wallpaperBloc = BlocProvider.of<WallpaperBloc>(context);
+    wallpaperBloc. add(FetchWallpaperEvents());
+
 
     _scrollController.addListener(() {
       if(_scrollController.position.pixels == _scrollController.position.maxScrollExtent){
@@ -123,13 +130,13 @@ class _HomeState extends State<Home> {
     if(wallpaperDetail != Null){
       wallpaperDetail["photos"].forEach((element){
         PhotoModel photoModel = new PhotoModel();
-              photoModel = PhotoModel.fromMap(element);
-              photos.add(photoModel);
+        photoModel = PhotoModel.fromMap(element);
+        photos.add(photoModel);
       });
       setState(() {
         int dat=photos.length;
-              print("lenght = $dat");
-              print( wallpaperDetail.length);
+        print("lenght = $dat");
+        print( wallpaperDetail.length);
       });
     }
   }
@@ -197,4 +204,3 @@ class CategoryCard extends StatelessWidget {
     );
   }
 }
-

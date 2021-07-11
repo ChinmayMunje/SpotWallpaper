@@ -1,12 +1,18 @@
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart'as http;
 
 import 'package:flutter/material.dart';
 import 'package:spot_wallpaper_app/Image_View.dart';
 import 'package:spot_wallpaper_app/Model/Photo_Model.dart';
 import 'package:spot_wallpaper_app/Services/WallpaperServices.dart';
+import 'package:spot_wallpaper_app/bloc/Category_Wallpaper/category_bloc.dart';
+import 'package:spot_wallpaper_app/bloc/Category_Wallpaper/category_event.dart';
+import 'package:spot_wallpaper_app/bloc/wallpaper_bloc.dart';
+import 'package:spot_wallpaper_app/bloc/wallpaper_event.dart';
+import 'package:spot_wallpaper_app/bloc/wallpaper_state.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String category;
@@ -17,7 +23,8 @@ class CategoryScreen extends StatefulWidget {
 }
 
 class _CategoryScreenState extends State<CategoryScreen> {
-
+  WallpaperBloc wallpaperBloc;
+  CategoryBloc categoryBloc;
   WallpaperServices services;
   var wallpaperInfo;
 
@@ -28,6 +35,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
     services = WallpaperServices();
     getCategoryWallpaper(widget.category);
     super.initState();
+    wallpaperBloc = BlocProvider.of<WallpaperBloc>(context);
+    categoryBloc = BlocProvider.of<CategoryBloc>(context);
+    wallpaperBloc. add(FetchWallpaperEvents());
+    categoryBloc.add(FetchCategoryWallpaperEvents());
   }
   @override
   Widget build(BuildContext context) {
@@ -41,9 +52,53 @@ class _CategoryScreenState extends State<CategoryScreen> {
           ],
         ),
         backgroundColor: Colors.transparent,
+        actions: [
+          IconButton(icon: Icon(Icons.refresh), onPressed: (){
+            wallpaperBloc.add(FetchWallpaperEvents());
+          }),
+        ],
       ),
       body: SingleChildScrollView(
-        child: wallpaper(photos, context,60),
+        // child: wallpaper(photos, context,60),
+        child: Container(
+          child: BlocListener<WallpaperBloc, WallpaperState>(
+            listener: (context,state){
+              if(state is WallpaperErrorState){
+                final _snackBar = SnackBar(content: Text(state.message));
+                ScaffoldMessenger.of(context).showSnackBar(_snackBar);
+              }
+            },
+            child: BlocBuilder<WallpaperBloc, WallpaperState>(
+              builder: (context,state){
+                if(state is WallpaperInitialState){
+                  return buildLoading();
+                }else if(state is WallpaperLoadingState){
+                  return buildLoading();
+                }else if(state is WallpaperLoadedState){
+                  return wallpaper(state.photos, context, 60);
+                }else if(state is WallpaperErrorState){
+                  return buildErrorUi(state.message);
+                }
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+  Widget buildLoading(){
+    return Center(
+      child: CircularProgressIndicator(),
+    );
+  }
+  Widget buildErrorUi(String message){
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text(
+          message,
+          style: TextStyle(color: Colors.red),
+        ),
       ),
     );
   }
@@ -61,8 +116,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
     });
   }
-
-
 }
 Widget wallpaper (List<PhotoModel> listPhoto, BuildContext context,int length) {
   return Container(

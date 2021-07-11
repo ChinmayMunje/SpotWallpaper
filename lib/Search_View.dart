@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart'as http;
 import 'package:spot_wallpaper_app/Category_screen.dart';
 import 'package:spot_wallpaper_app/Model/Photo_Model.dart';
+import 'package:spot_wallpaper_app/Services/WallpaperServices.dart';
 
 class Search_View extends StatefulWidget {
   final String search;
@@ -15,28 +16,30 @@ class Search_View extends StatefulWidget {
 }
 
 class _Search_ViewState extends State<Search_View> {
-
+  var searchInfo;
+  WallpaperServices services;
   List<PhotoModel> photos = new List();
   TextEditingController searchController = new TextEditingController();
 
 
-
-  getSearchWallpaper(String searchQuery) async{
-    String apikey = "563492ad6f917000010000010e57141f30b2437cb7746c1519d63ee5";
-    await http.get("https://api.pexels.com/v1/search?query=$searchQuery&per_page=30&page=1",
-        headers: {"Authorization": apikey}).then((value) {
-      Map<String, dynamic> jsonData = jsonDecode(value.body);
-      jsonData["photos"].forEach((element) {
-        PhotoModel photosModel = new PhotoModel();
-        photosModel = PhotoModel.fromMap(element);
-        photos.add(photosModel);
-      });
-
-      setState(() {});
-    });
-  }
+  //
+  // getSearchWallpaper(String searchQuery) async{
+  //   String apikey = "563492ad6f917000010000010e57141f30b2437cb7746c1519d63ee5";
+  //   await http.get("https://api.pexels.com/v1/search?query=$searchQuery&per_page=30&page=1",
+  //       headers: {"Authorization": apikey}).then((value) {
+  //     Map<String, dynamic> jsonData = jsonDecode(value.body);
+  //     jsonData["photos"].forEach((element) {
+  //       PhotoModel photosModel = new PhotoModel();
+  //       photosModel = PhotoModel.fromMap(element);
+  //       photos.add(photosModel);
+  //     });
+  //
+  //     setState(() {});
+  //   });
+  // }
   @override
   void initState() {
+    services = WallpaperServices();
     getSearchWallpaper(widget.search);
     searchController.text = widget.search;
     super.initState();
@@ -101,5 +104,20 @@ class _Search_ViewState extends State<Search_View> {
         ),
       ),
     );
+  }
+
+
+  Future getSearchWallpaper(String searchQuery) async{
+    searchInfo = await services.getSearchWallpaper(searchQuery);
+    if(searchInfo != Null){
+      searchInfo["photos"].forEach((element){
+        PhotoModel photoModel = new PhotoModel();
+        photoModel = PhotoModel.fromMap(element);
+        photos.add(photoModel);
+      });
+    }
+    setState(() {
+
+    });
   }
 }
